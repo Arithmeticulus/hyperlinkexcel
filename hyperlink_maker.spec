@@ -5,7 +5,7 @@ a = Analysis(
     ['hyperlink_maker.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[('Hyperlink_Maker_Icon_256.ico', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -35,5 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['Hyperlink_Maker_Icon_256.ico'],
+    icon='Hyperlink_Maker_Icon_256.ico',
 )

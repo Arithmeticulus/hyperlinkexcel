@@ -25,6 +25,10 @@ class HyperlinkMakerApp:
         self.root.minsize(700, 650)
         self.root.geometry("700x650")
         self.root.configure(bg="#e3f2fd")
+        
+        icon_path = os.path.join(os.path.dirname(__file__), "Hyperlink_Maker_Icon_256.ico")
+        if os.path.exists(icon_path):
+            self.root.iconbitmap(icon_path)
 
         self.excel_file = None
         self.workbook = None
@@ -83,25 +87,28 @@ class HyperlinkMakerApp:
         self.drop_frame.pack_propagate(False)
         self.drop_frame.pack(pady=(0, 12))
         
-        drop_inner = tk.Frame(self.drop_frame, bg="#bbdefb")
-        drop_inner.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+        self.drop_inner = tk.Frame(self.drop_frame, bg="#bbdefb")
+        self.drop_inner.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
         
-        drop_label = tk.Label(drop_inner, 
+        self.drop_label = tk.Label(self.drop_inner, 
                              text="Drag & Drop Excel File Here",
                              bg="#bbdefb", 
                              fg="#0d47a1",
                              font=("Segoe UI", 13, "bold"))
-        drop_label.pack()
+        self.drop_label.pack()
         
-        drop_label2 = tk.Label(drop_inner, 
+        self.drop_label2 = tk.Label(self.drop_inner, 
                               text="or click the button below",
                               bg="#bbdefb", 
                               fg="#1976d2",
                               font=("Segoe UI", 10))
-        drop_label2.pack()
+        self.drop_label2.pack()
         
         if WINDND_AVAILABLE:
             windnd.hook_dropfiles(self.drop_frame, func=self.handle_drop)
+            windnd.hook_dropfiles(self.drop_inner, func=self.handle_drop)
+            windnd.hook_dropfiles(self.drop_label, func=self.handle_drop)
+            windnd.hook_dropfiles(self.drop_label2, func=self.handle_drop)
         
         select_btn = ttk.Button(main_frame, text="Select Excel File", command=self.select_file)
         select_btn.pack(pady=(0, 12))
@@ -197,16 +204,38 @@ class HyperlinkMakerApp:
                                        cursor="arrow")
         self.save_new_btn.pack(side=tk.LEFT, padx=5, pady=5)
     
+    def _normalize_dropped_path(self, file_path):
+        if file_path is None:
+            return None
+        if isinstance(file_path, bytes):
+            try:
+                file_path = file_path.decode("utf-8")
+            except UnicodeDecodeError:
+                try:
+                    file_path = file_path.decode("mbcs")
+                except Exception:
+                    file_path = file_path.decode(errors="replace")
+
+        file_path = str(file_path).strip()
+        if len(file_path) >= 2 and file_path[0] == "{" and file_path[-1] == "}":
+            file_path = file_path[1:-1]
+        if len(file_path) >= 2 and file_path[0] == '"' and file_path[-1] == '"':
+            file_path = file_path[1:-1]
+        return file_path
+
     def handle_drop(self, files):
         if isinstance(files, (list, tuple)):
-            if files:
-                file_path = files[0]
-            else:
+            if not files:
                 return
+            file_path = files[0]
         else:
             file_path = files
-        
-        if file_path and file_path.lower().endswith((".xlsx", ".xls")):
+
+        file_path = self._normalize_dropped_path(file_path)
+        if not file_path:
+            return
+
+        if file_path.lower().endswith((".xlsx", ".xls")):
             self.load_file(file_path)
         else:
             messagebox.showerror("Error", "Please drop an Excel file (.xlsx or .xls)")
